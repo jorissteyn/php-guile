@@ -2,6 +2,8 @@
 #ifndef PHP_GUILE_H
 #define PHP_GUILE_H
 
+#include <libguile.h>
+
 extern zend_module_entry guile_module_entry;
 #define phpext_guile_ptr &guile_module_entry
 
@@ -44,6 +46,8 @@ ZEND_END_MODULE_GLOBALS(guile)
 #else
 #define GUILE_G(v) (guile_globals.v)
 #endif
+
+int php_guile_scm_to_zval(SCM *scmval, zval *retval);
 
 #endif	/* PHP_GUILE_H */
 

@@ -211,8 +211,8 @@ int php_guile_scm_to_zval(SCM *scmval, zval *retval)
             return SUCCESS;
         }
 
-        SCM carscm = scm_car(scmval);
-        SCM cdrscm = scm_cdr(scmval);
+        SCM carscm = scm_car(*scmval);
+        SCM cdrscm = scm_cdr(*scmval);
 
         zval *carval = NULL;
         zval *cdrval = NULL;
@@ -220,20 +220,20 @@ int php_guile_scm_to_zval(SCM *scmval, zval *retval)
         ALLOC_INIT_ZVAL(carval);
         ALLOC_INIT_ZVAL(cdrval);
 
-        if (php_guile_scm_to_zval(&carscm, &carval) == FAILURE) {
+        if (php_guile_scm_to_zval(&carscm, carval) == FAILURE) {
             return FAILURE;
         }
 
-        if (php_guile_scm_to_zval(&cdrscm, &cdrval) == FAILURE) {
+        if (php_guile_scm_to_zval(&cdrscm, cdrval) == FAILURE) {
             return FAILURE;
         }
 
         // TODO: segfaults! See tests/006.phpt.
-        if (zend_hash_add(&listval, 0, sizeof(0), &carval, sizeof(zval*), NULL) == FAILURE) {
+        if (zend_hash_index_update(&listval, 0, &carval, sizeof(zval*), NULL) == FAILURE) {
             return FAILURE;
         }
 
-        if (zend_hash_add(&listval, 1, sizeof(0), &cdrval, sizeof(zval*), NULL) == FAILURE) {
+        if (zend_hash_index_update(&listval, 1, &cdrval, sizeof(zval*), NULL) == FAILURE) {
             return FAILURE;
         }
 
