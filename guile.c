@@ -8,6 +8,8 @@
 #include "ext/standard/info.h"
 #include "php_guile.h"
 
+#include <libguile.h>
+
 /* If you declare any globals in php_guile.h uncomment this:
 ZEND_DECLARE_MODULE_GLOBALS(guile)
 */
@@ -118,13 +120,141 @@ PHP_MINFO_FUNCTION(guile)
 }
 /* }}} */
 
+/* {{{ proto void guile_init()
+   { */
+PHP_FUNCTION(guile_init)
+{
+    scm_init_guile();
+
+    RETURN_NULL();
+}
+/* }}} */
+
+/* {{{ proto void guile_eval()
+   { */
+PHP_FUNCTION(guile_eval)
+{
+    int argc = ZEND_NUM_ARGS();
+    char* data = NULL;
+    int data_len = 0;
+
+    if (zend_parse_parameters(argc TSRMLS_CC, "s", &data, &data_len) != SUCCESS)
+		return;
+
+    zval *retval = NULL;
+    ALLOC_INIT_ZVAL(retval);
+
+    SCM scmval = scm_c_eval_string(data);
+
+    // We have our return value now. Map it to C data types, then map
+    // it to PHP values.
+    if (php_guile_scm_to_zval(&scmval, retval) == FAILURE) {
+        zend_error(E_ERROR, "Unable to convert SCM to ZVAL");
+    }
+
+    // TODO: Should we copy? and dtor?
+    RETURN_ZVAL(retval, 1, 1);
+}
+
+/* }}} */
+
+/* {{{ zval guile_scm_to_zval()
+   { */
+int php_guile_scm_to_zval(SCM *scmval, zval *retval)
+{
+    // Convert all supported types. Returns SUCCESS, or FAILURE if the
+    // SCM could not be fully converted to a zval.
+
+    // Strings.
+    if (scm_is_string(*scmval)) {
+        char *strval = scm_to_locale_string(*scmval);
+
+        ZVAL_STRING(retval, strval, 1);
+
+        return SUCCESS;
+    }
+
+    // Integers.
+    if (scm_is_integer(*scmval)) {
+        long intval = scm_to_long(*scmval);
+
+        ZVAL_LONG(retval, intval);
+
+        return SUCCESS;
+    }
+
+    // Floating-point numbers.
+    if (scm_is_real(*scmval)) {
+        double dblval = scm_to_double(*scmval);
+
+        ZVAL_DOUBLE(retval, dblval);
+
+        return SUCCESS;
+    }
+
+    //
+    // And finally... LISTS!
+    //
+    if (scm_is_pair(*scmval)) {
+        // Null, not nil.
+        if (scm_is_null_and_not_nil(*scmval)) {
+            ZVAL_NULL(retval);
+
+            return SUCCESS;
+        }
+
+        HashTable listval = {0};
+        zend_hash_init(&listval, 0, retval, ZVAL_PTR_DTOR, 0);
+
+        // Nil and not null, nil is an empty list.
+        if (scm_is_null(scmval)) {
+            return SUCCESS;
+        }
+
+        SCM carscm = scm_car(scmval);
+        SCM cdrscm = scm_cdr(scmval);
+
+        zval *carval = NULL;
+        zval *cdrval = NULL;
+
+        ALLOC_INIT_ZVAL(carval);
+        ALLOC_INIT_ZVAL(cdrval);
+
+        if (php_guile_scm_to_zval(&carscm, &carval) == FAILURE) {
+            return FAILURE;
+        }
+
+        if (php_guile_scm_to_zval(&cdrscm, &cdrval) == FAILURE) {
+            return FAILURE;
+        }
+
+        // TODO: segfaults! See tests/006.phpt.
+        if (zend_hash_add(&listval, 0, sizeof(0), &carval, sizeof(zval*), NULL) == FAILURE) {
+            return FAILURE;
+        }
+
+        if (zend_hash_add(&listval, 1, sizeof(0), &cdrval, sizeof(zval*), NULL) == FAILURE) {
+            return FAILURE;
+        }
+
+        return SUCCESS;
+    }
+
+    // TODO: Impelement linked lists and all the other types.
+
+    // Unsupported data type.
+    return FAILURE;
+}
+/* }}} */
+
 /* {{{ guile_functions[]
  *
  * Every user visible function must have an entry in guile_functions[].
  */
 const zend_function_entry guile_functions[] = {
-	PHP_FE(confirm_guile_compiled,	NULL)		/* For testing, remove later. */
-	PHP_FE_END	/* Must be the last line in guile_functions[] */
+    PHP_FE(guile_init,	NULL)
+    PHP_FE(guile_eval,	NULL)
+    PHP_FE_END	/* Must be the last line in guile_functions[] */
 };
 /* }}} */
 

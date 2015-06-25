@@ -7,9 +7,8 @@ dnl without editing.
 
 dnl If your extension references something external, use with:
 
-dnl PHP_ARG_WITH(guile, for guile support,
-dnl Make sure that the comment is aligned:
-dnl [  --with-guile             Include guile support])
+PHP_ARG_WITH(guile, for guile support,
+[  --with-guile             Include guile support])
 
 dnl Otherwise use enable:
 
@@ -18,46 +17,41 @@ dnl Make sure that the comment is aligned:
 dnl [  --enable-guile           Enable guile support])
 
 if test "$PHP_GUILE" != "no"; then
-  dnl Write more examples of tests here...
+  SEARCH_PATH="/usr/local /usr"
+  SEARCH_FOR="/include/guile/2.0/libguile.h"
+  if test -r $PHP_GUILE/$SEARCH_FOR; then # path given as parameter
+     GUILE_DIR=$PHP_GUILE
+  else # search default path list
+     AC_MSG_CHECKING([for guile files in default path])
+     for i in $SEARCH_PATH ; do
+         if test -r $i/$SEARCH_FOR; then
+             GUILE_DIR=$i
+             AC_MSG_RESULT(found in $i)
+         fi
+      done
+  fi
 
-  dnl # --with-guile -> check with-path
-  dnl SEARCH_PATH="/usr/local /usr"     # you might want to change this
-  dnl SEARCH_FOR="/include/guile.h"  # you most likely want to change this
-  dnl if test -r $PHP_GUILE/$SEARCH_FOR; then # path given as parameter
-  dnl   GUILE_DIR=$PHP_GUILE
-  dnl else # search default path list
-  dnl   AC_MSG_CHECKING([for guile files in default path])
-  dnl   for i in $SEARCH_PATH ; do
-  dnl     if test -r $i/$SEARCH_FOR; then
-  dnl       GUILE_DIR=$i
-  dnl       AC_MSG_RESULT(found in $i)
-  dnl     fi
-  dnl   done
-  dnl fi
-  dnl
-  dnl if test -z "$GUILE_DIR"; then
-  dnl   AC_MSG_RESULT([not found])
-  dnl   AC_MSG_ERROR([Please reinstall the guile distribution])
-  dnl fi
+  if test -z "$GUILE_DIR"; then
+      AC_MSG_RESULT([not found])
+      AC_MSG_ERROR([Please reinstall the guile distribution])
+  fi
 
-  dnl # --with-guile -> add include path
-  dnl PHP_ADD_INCLUDE($GUILE_DIR/include)
+  PHP_ADD_INCLUDE($GUILE_DIR/include/guile/2.0)
 
-  dnl # --with-guile -> check for lib and symbol presence
-  dnl LIBNAME=guile # you may want to change this
-  dnl LIBSYMBOL=guile # you most likely want to change this 
+  LIBNAME=guile-2.0
+  LIBSYMBOL=scm_version
 
-  dnl PHP_CHECK_LIBRARY($LIBNAME,$LIBSYMBOL,
-  dnl [
-  dnl   PHP_ADD_LIBRARY_WITH_PATH($LIBNAME, $GUILE_DIR/$PHP_LIBDIR, GUILE_SHARED_LIBADD)
-  dnl   AC_DEFINE(HAVE_GUILELIB,1,[ ])
-  dnl ],[
-  dnl   AC_MSG_ERROR([wrong guile lib version or lib not found])
-  dnl ],[
-  dnl   -L$GUILE_DIR/$PHP_LIBDIR -lm
-  dnl ])
-  dnl
-  dnl PHP_SUBST(GUILE_SHARED_LIBADD)
+  PHP_CHECK_LIBRARY($LIBNAME,$LIBSYMBOL,
+  [
+      PHP_ADD_LIBRARY_WITH_PATH($LIBNAME, $GUILE_DIR/$PHP_LIBDIR, GUILE_SHARED_LIBADD)
+      AC_DEFINE(HAVE_GUILELIB,1,[ ])
+  ],[
+      AC_MSG_ERROR([wrong libguile version or libguile 2.0 not found])
+  ],[
+      -L$GUILE_DIR/$PHP_LIBDIR/guile/2.0 -lm
+  ])
+
+  PHP_SUBST(GUILE_SHARED_LIBADD)
 
   PHP_NEW_EXTENSION(guile, guile.c, $ext_shared)
 fi
