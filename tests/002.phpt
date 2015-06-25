@@ -4,7 +4,6 @@ Test guile initialization
 <?php if (!extension_loaded("guile")) print "skip"; ?>
 --FILE--
 <?php
-guile_init();
 echo "guile initialized";
 ?>
 --EXPECT--

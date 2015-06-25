@@ -70,9 +70,12 @@ static void php_guile_init_globals(zend_guile_globals *guile_globals)
  */
 PHP_MINIT_FUNCTION(guile)
 {
-	/* If you have INI entries, uncomment these lines 
+    /* If you have INI entries, uncomment these lines
 	REGISTER_INI_ENTRIES();
-	*/
+    */
+
+    scm_init_guile();
+
 	return SUCCESS;
 }
 /* }}} */
@@ -117,16 +120,6 @@ PHP_MINFO_FUNCTION(guile)
 	/* Remove comments if you have entries in php.ini
 	DISPLAY_INI_ENTRIES();
 	*/
-}
-/* }}} */
-
-/* {{{ proto void guile_init()
-   { */
-PHP_FUNCTION(guile_init)
-{
-    scm_init_guile();
-
-    RETURN_NULL();
 }
 /* }}} */
 
@@ -252,7 +245,6 @@ int php_guile_scm_to_zval(SCM *scmval, zval *retval)
  * Every user visible function must have an entry in guile_functions[].
  */
 const zend_function_entry guile_functions[] = {
-    PHP_FE(guile_init,	NULL)
     PHP_FE(guile_eval,	NULL)
     PHP_FE_END	/* Must be the last line in guile_functions[] */
 };

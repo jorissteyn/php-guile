@@ -4,8 +4,6 @@ Test guile_eval with integer return value
 <?php if (!extension_loaded("guile")) print "skip"; ?>
 --FILE--
 <?php
-guile_init();
-
 $data = <<<'SCHEME'
 (+ 1 1)
 SCHEME;

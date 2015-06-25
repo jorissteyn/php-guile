@@ -4,8 +4,6 @@ Test guile_eval with float return value
 <?php if (!extension_loaded("guile")) print "skip"; ?>
 --FILE--
 <?php
-guile_init();
-
 $data = <<<'SCHEME'
 (/ 10 4)
 SCHEME;

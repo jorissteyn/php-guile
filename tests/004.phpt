@@ -4,8 +4,6 @@ Test guile_eval with string return value
 <?php if (!extension_loaded("guile")) print "skip"; ?>
 --FILE--
 <?php
-guile_init();
-
 $data = <<<'SCHEME'
 (string-concatenate '("hello" "guile"))
 SCHEME;
